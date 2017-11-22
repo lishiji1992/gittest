@@ -1,5 +1,25 @@
-atman
-atman
-in branch deis
-atmssan
-c
+#!/bin/bash -ex
+
+#work_dir=/data
+work_dir=/media/liaozhaopo/f291b4cd-0ece-4484-a3fc-56e2d497d5ae1/trains/new_base
+#delta_dir=$1
+#delta_data=$2
+data_pipeline_home=/home/lishiji/work/AtmanCorp/project/data/data-process
+delta_dir=/media/liaozhaopo/f291b4cd-0ece-4484-a3fc-56e2d497d5ae1/trains/new_base/delta
+delta_data=/media/liaozhaopo/f291b4cd-0ece-4484-a3fc-56e2d497d5ae1/mergeall/novel/new_base.txt
+##########################
+# Delta data preprocessing
+##########################
+
+python ${data_pipeline_home}/data_process/run.py --schema schema_process_data.json --workdir ${delta_dir} --infile ${delta_data}
+python subword-nmt/apply_bpe.py -c ${work_dir}/codebook/src.codes -i ${delta_dir}/src.final -o ${delta_dir}/src.bpe -b ${work_dir}/src_entity_tags.txt
+python subword-nmt/apply_bpe.py -c ${work_dir}/codebook/trg.codes -i ${delta_dir}/trg.final -o ${delta_dir}/trg.bpe -b ${work_dir}/trg_entity_tags.txt
+
+############
+# Tokenizing
+############
+
+python ${data_pipeline_home}/data_process/run.py --schema schema_tokenize.json --workdir ${delta_dir} --infile ${delta_dir}/src.bpe ${work_dir}/vocab.src
+mv ${delta_dir}/data.ids ${delta_dir}/src.bpe.ids
+python ${data_pipeline_home}/data_process/run.py --schema schema_tokenize.json --workdir ${delta_dir} --infile ${delta_dir}/trg.bpe ${work_dir}/vocab.trg
+mv ${delta_dir}/data.ids ${delta_dir}/trg.bpe.ids
